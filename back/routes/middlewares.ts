@@ -1,4 +1,7 @@
-exports.isLoggedIn = (req, res, next) => {
+import { NextFunction } from "express-serve-static-core";
+import { Request, Response } from "express";
+
+export let isLoggedIn = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated()) {
     next();
   } else {
@@ -6,7 +9,7 @@ exports.isLoggedIn = (req, res, next) => {
   }
 };
 
-exports.isNotLoggedIn = (req, res, next) => {
+export let isNotLoggedIn = (req: Request, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated()) {
     next();
   } else {
