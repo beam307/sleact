@@ -7,7 +7,8 @@ import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ChannelsModule } from './channels/channels.module';
 import { DmsModule } from './dms/dms.module';
-import { UsersService } from './users/users.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as ormconfig from 'ormconfig';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UsersService } from './users/users.service';
     WorkspacesModule,
     ChannelsModule,
     DmsModule,
+    TypeOrmModule.forRoot(ormconfig),
   ],
   controllers: [AppController],
   providers: [AppService],

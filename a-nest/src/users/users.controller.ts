@@ -6,7 +6,7 @@ import { UserDto } from '../common/dto/user.dto';
 import { User } from '../common/decorators/user.decorator';
 
 @ApiTags('USER')
-@Controller('users')
+@Controller('api/users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
   @ApiResponse({
@@ -26,8 +26,8 @@ export class UsersController {
 
   @ApiOperation({ summary: '회원가입' })
   @Post()
-  postUsers(@Body() data: JoinRequestDto) {
-    this.usersService.postUsers(data.email, data.nickname, data.password);
+  async join(@Body() data: JoinRequestDto) {
+    await this.usersService.join(data.email, data.nickname, data.password);
   }
 
   @ApiResponse({
