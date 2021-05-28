@@ -1,10 +1,10 @@
-import passport from "passport";
-import local from "./local";
-import User from "../models/user";
-import Workspace from "../models/workspace";
+const passport = require("passport");
+const local = require("./local");
+const User = require("../models/user");
+const Workspace = require("../models/workspace");
 
-export default () => {
-  passport.serializeUser((user: any, done) => {
+module.exports = () => {
+  passport.serializeUser((user, done) => {
     // 서버쪽에 [{ id: 1, cookie: 'clhxy' }]
     done(null, user.id);
   });

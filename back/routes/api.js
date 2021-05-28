@@ -1,26 +1,19 @@
-import { Op } from "sequelize";
-import express, { Request } from "express";
-import passport from "passport";
-import bcrypt from "bcrypt";
+const { Op } = require("sequelize");
+const express = require("express");
+const passport = require("passport");
+const bcrypt = require("bcrypt");
 
-import { sequelize } from "../models";
-import { isNotLoggedIn, isLoggedIn } from "./middlewares";
-import User, { UserAttributes } from "../models/user";
-import Workspace from "../models/workspace";
-import Channel from "../models/channel";
-import ChannelChat from "../models/channelChat";
-import DM from "../models/dm";
-
-declare global {
-  namespace Express {
-    export interface User extends UserAttributes {
-    }
-  }
-}
+const { sequelize } = require("../models");
+const { isNotLoggedIn, isLoggedIn } = require("./middlewares");
+const User = require("../models/user");
+const Workspace = require("../models/workspace");
+const Channel = require("../models/channel");
+const ChannelChat = require("../models/channelChat");
+const DM = require("../models/dm");
 
 const router = express.Router();
 
-router.get("/workspaces", isLoggedIn, async (req: Request, res, next) => {
+router.get("/workspaces", isLoggedIn, async (req, res, next) => {
   try {
     const workspaces = await Workspace.findAll({
       include: [
@@ -29,7 +22,7 @@ router.get("/workspaces", isLoggedIn, async (req: Request, res, next) => {
           as: "Members",
           attributes: ["id"],
           through: {
-            where: { UserId: req.user?.id },
+            where: { UserId: req.user.id },
             attributes: ["UserId"],
           },
         },
@@ -41,7 +34,7 @@ router.get("/workspaces", isLoggedIn, async (req: Request, res, next) => {
   }
 });
 
-router.post("/workspaces", isLoggedIn, async (req: Request, res, next) => {
+router.post("/workspaces", isLoggedIn, async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const exWorkspace = await Workspace.findOne({
@@ -55,13 +48,13 @@ router.post("/workspaces", isLoggedIn, async (req: Request, res, next) => {
       {
         name: req.body.workspace,
         url: req.body.url,
-        OwnerId: req.user?.id,
+        OwnerId: req.user.id,
       },
       {
         transaction: t,
       }
     );
-    await workspace.addMembers(req.user?.id, { transaction: t });
+    await workspace.addMembers(req.user.id, { transaction: t });
     const channel = await Channel.create(
       {
         name: "일반",
@@ -71,7 +64,7 @@ router.post("/workspaces", isLoggedIn, async (req: Request, res, next) => {
         transaction: t,
       }
     );
-    await channel.addMembers(req.user?.id, { transaction: t });
+    await channel.addMembers(req.user.id, { transaction: t });
     await t.commit();
     return res.json(workspace);
   } catch (error) {
@@ -83,7 +76,7 @@ router.post("/workspaces", isLoggedIn, async (req: Request, res, next) => {
 router.get(
   "/workspaces/:workspace/channels",
   isLoggedIn,
-  async (req: Request, res, next) => {
+  async (req, res, next) => {
     try {
       const workspace = await Workspace.findOne({
         where: { url: req.params.workspace },
@@ -100,7 +93,7 @@ router.get(
               attributes: ["id"],
               through: {
                 where: {
-                  UserId: req.user?.id,
+                  UserId: req.user.id,
                 },
                 attributes: ["UserId"],
               },
@@ -146,7 +139,7 @@ router.post(
           transaction: t,
         }
       );
-      await channel.addMembers(req.user?.id, { transaction: t });
+      await channel.addMembers(req.user.id, { transaction: t });
       await t.commit();
       return res.json(channel);
     } catch (error) {
@@ -219,8 +212,8 @@ router.get(
             },
           ],
           order: [["createdAt", "DESC"]],
-          limit: parseInt(<string>req.query.perPage, 10),
-          offset: parseInt(<string>req.query.perPage) * (parseInt(<string>req.query.page) - 1),
+          limit: parseInt(req.query.perPage, 10),
+          offset: req.query.perPage * (req.query.page - 1),
         })
       );
     } catch (error) {
@@ -252,7 +245,7 @@ router.post(
         return res.status(404).send("존재하지 않는 채널입니다.");
       }
       const chat = await ChannelChat.create({
-        UserId: req.user?.id,
+        UserId: req.user.id,
         ChannelId: channel.id,
         content: req.body.content,
       });
@@ -268,8 +261,8 @@ router.post(
         ],
       });
       const io = req.app.get("io");
-      io.of(`/ws-${ workspace.url }`)
-        .to(`/ws-${ workspace.url }-${ channel.id }`)
+      io.of(`/ws-${workspace.url}`)
+        .to(`/ws-${workspace.url}-${channel.id}`)
         .emit("message", chatWithUser);
       res.send("ok");
     } catch (error) {
@@ -294,12 +287,12 @@ router.get(
           where: {
             [Op.or]: [
               {
-                SenderId: req.user?.id,
+                SenderId: req.user.id,
                 ReceiverId: req.params.id,
               },
               {
                 SenderId: req.params.id,
-                ReceiverId: req.user?.id,
+                ReceiverId: req.user.id,
               },
             ],
           },
@@ -316,8 +309,8 @@ router.get(
             },
           ],
           order: [["createdAt", "DESC"]],
-          limit: parseInt(<string>req.query.perPage, 10),
-          offset: parseInt(<string>req.query.perPage) * (parseInt(<string>req.query.page) - 1),
+          limit: parseInt(req.query.perPage, 10),
+          offset: req.query.perPage * (req.query.page - 1),
         })
       );
     } catch (error) {
@@ -326,10 +319,9 @@ router.get(
   }
 );
 
-function getKeyByValue(object: any, value: any) {
+function getKeyByValue(object, value) {
   return Object.keys(object).find((key) => object[key] === value);
 }
-
 router.post(
   "/workspaces/:workspace/dms/:id/chats",
   isLoggedIn,
@@ -341,7 +333,7 @@ router.post(
       if (!workspace) {
         return res.status(404).send("존재하지 않는 워크스페이스입니다.");
       }
-      const SenderId = req.user?.id;
+      const SenderId = req.user.id;
       const ReceiverId = req.params.id;
       const dm = await DM.create({
         SenderId,
@@ -361,10 +353,10 @@ router.post(
       const io = req.app.get("io");
       const onlineMap = req.app.get("onlineMap");
       const receiverSocketId = getKeyByValue(
-        onlineMap[`/ws-${ workspace.url }`],
+        onlineMap[`/ws-${workspace.url}`],
         Number(ReceiverId)
       );
-      io.of(`/ws-${ workspace.url }`)
+      io.of(`/ws-${workspace.url}`)
         .to(receiverSocketId)
         .emit("dm", dmWithSender);
       res.send("ok");
@@ -630,8 +622,8 @@ router.post("/users", isNotLoggedIn, async (req, res, next) => {
     });
     const sleact = await Workspace.findOne({ where: { id: 1 } });
     const channel = await Channel.findOne({ where: { id: 1 } });
-    await sleact?.addMembers(user);
-    await channel?.addMembers(user);
+    await sleact.addMembers(user);
+    await channel.addMembers(user);
     res.status(201).send("ok");
   } catch (error) {
     console.error(error);
@@ -665,8 +657,8 @@ router.post("/users/login", isNotLoggedIn, (req, res, next) => {
 
 router.post("/users/logout", isLoggedIn, (req, res) => {
   req.logout();
-  req.session.destroy((error) => console.log(error));
+  req.session.destroy();
   res.send("ok");
 });
 
-export default router;
+module.exports = router;

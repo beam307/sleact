@@ -1,9 +1,7 @@
-import SocketIO from "socket.io";
-import http from "http";
-import { Express } from "express";
+const SocketIO = require("socket.io");
 
-const onlineMap: any = {};
-export default (server: http.Server, app: Express) => {
+const onlineMap = {};
+module.exports = (server, app) => {
   const io = SocketIO(server, {
     path: "/socket.io",
   });
@@ -22,7 +20,7 @@ export default (server: http.Server, app: Express) => {
         "onlineList",
         Object.values(onlineMap[socket.nsp.name])
       );
-      channels.forEach((channel: any) => {
+      channels.forEach((channel) => {
         socket.join(`${socket.nsp.name}-${channel}`);
       });
     });

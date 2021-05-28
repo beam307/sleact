@@ -1,19 +1,19 @@
-import express from "express";
-import dotenv from "dotenv";
-import morgan from "morgan";
-import session, { SessionOptions } from "express-session";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import path from "path";
-import hpp from "hpp";
-import helmet from "helmet";
-import passport from "passport";
+const express = require("express");
+const dotenv = require("dotenv");
+const morgan = require("morgan");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const path = require("path");
+const hpp = require("hpp");
+const helmet = require("helmet");
+const passport = require("passport");
 
 dotenv.config();
-import { sequelize } from "./models";
-import passportConfig from "./passport";
-import apiRouter from "./routes/api";
-import webSocket from "./socket";
+const { sequelize } = require("./models");
+const passportConfig = require("./passport");
+const apiRouter = require("./routes/api");
+const webSocket = require("./socket");
 
 const app = express();
 app.set("PORT", process.env.PORT || 3095);
@@ -44,16 +44,17 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-let sessionOption: SessionOptions = {
+const sessionOption = {
   resave: false,
   saveUninitialized: false,
-  secret: <string>process.env.COOKIE_SECRET,
+  secret: process.env.COOKIE_SECRET,
   cookie: {
     httpOnly: true,
   },
 };
 if (prod) {
-  sessionOption.cookie!.secure = true;
+  sessionOption.cookie.secure = true;
+  sessionOption.cookie.proxy = true;
 }
 app.use(session(sessionOption));
 app.use(passport.initialize());
