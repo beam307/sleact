@@ -1,15 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { session } from 'express-session';
-import { cookieParser } from 'cookie-parser';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './httpExceiption.filter';
 import { ValidationPipe } from '@nestjs/common';
+import passport from 'passport';
 declare const module: any;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const port = process.env.PORT || 3000;
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
   const config = new DocumentBuilder()
@@ -21,17 +21,21 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  // app.use(cookieParser());
-  // app.use(
-  //   session({
-  //     resave: false,
-  //     saveUninitialized: false,
-  //     secret: process.env.COOKIE_SECRET,
-  //     cookie: {
-  //       httpOnly: true,
-  //     },
-  //   }),
-  // );
+  app.use(cookieParser());
+  app.use(
+    session({
+      resave: false,
+      saveUninitialized: false,
+      secret: process.env.COOKIE_SECRET,
+      cookie: {
+        httpOnly: true,
+      },
+    }),
+  );
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Listening on port ${port}`);
   if (module.hot) {

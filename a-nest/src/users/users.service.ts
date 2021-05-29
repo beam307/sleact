@@ -8,12 +8,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../entities/Users';
 import { Repository } from 'typeorm';
 import bcrypt from 'bcrypt';
+import { WorkspaceMembers } from '../entities/WorkspaceMembers';
+import { ChannelMembers } from '../entities/ChannelMembers';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(Users)
     private usersRepository: Repository<Users>,
+    @InjectRepository(WorkspaceMembers)
+    private workspaceMembersRepository: Repository<WorkspaceMembers>,
+    @InjectRepository(ChannelMembers)
+    private channelMembersRepository: Repository<ChannelMembers>,
   ) {}
 
   async join(email: string, nickname: string, password: string) {
@@ -24,10 +30,29 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    await this.usersRepository.save({
+    const returned = await this.usersRepository.save({
       email,
       nickname,
       password: hashedPassword,
+    });
+
+    await this.workspaceMembersRepository.save({
+      UserId: returned.id,
+      WorkspaceId: 1,
+    });
+
+    await this.channelMembersRepository.save({
+      UserId: returned.id,
+      ChannelId: 1,
+    });
+
+    return true;
+  }
+
+  async findByEmail(email: string) {
+    return this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'password'],
     });
   }
 }
